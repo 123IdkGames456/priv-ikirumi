@@ -77,6 +77,8 @@
     const status = document.getElementById('status');
     let galleryData = null;
     let activeTab = 'images';
+    let viewerFiles = [];
+    let viewerIndex = 0;
     let filesFolderId = GLOBAL_FILES_ROOT;
     let filesFolderData = null;
     let filesRequestId = 0;
@@ -145,6 +147,40 @@
       document.body.appendChild(script);
       retryTimer = setTimeout(retryConnection, 5000);
     }
+
+    function showViewerImage() {
+      const file = viewerFiles[viewerIndex];
+      if (!file) return;
+      document.getElementById('viewerImage').src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w4000' : file.url;
+      document.getElementById('viewerImage').alt = file.name || 'Image';
+      document.getElementById('viewerCaption').textContent = (activeTab === 'oc' ? 'OC image' : 'Image') + ' · ' + (viewerIndex + 1) + ' / ' + viewerFiles.length + ' · ' + (file.name || '');
+    }
+    function openViewer(index) {
+      viewerIndex = index;
+      showViewerImage();
+      document.getElementById('imageViewer').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeViewer() {
+      document.getElementById('imageViewer').classList.remove('open');
+      document.getElementById('viewerImage').removeAttribute('src');
+      document.body.style.overflow = '';
+    }
+    function stepViewer(amount) {
+      if (!viewerFiles.length) return;
+      viewerIndex = (viewerIndex + amount + viewerFiles.length) % viewerFiles.length;
+      showViewerImage();
+    }
+    document.getElementById('viewerClose').onclick = closeViewer;
+    document.getElementById('viewerPrev').onclick = () => stepViewer(-1);
+    document.getElementById('viewerNext').onclick = () => stepViewer(1);
+    document.getElementById('imageViewer').onclick = event => { if (event.target.id === 'imageViewer') closeViewer(); };
+    document.addEventListener('keydown', event => {
+      if (!document.getElementById('imageViewer').classList.contains('open')) return;
+      if (event.key === 'Escape') closeViewer();
+      if (event.key === 'ArrowLeft') stepViewer(-1);
+      if (event.key === 'ArrowRight') stepViewer(1);
+    });
 
     function renderTab() {
       if (!galleryData) return;
