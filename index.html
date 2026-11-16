@@ -20,10 +20,13 @@
     .status { color: #a6a9b2; margin: 0 0 18px; font-size: 14px; }
     .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
     .item { min-width: 0; overflow: hidden; border: 1px solid #30323a; border-radius: 10px; background: #191b20; }
-    .item img, .item video { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: #08090b; }\n    .item video { height: auto; min-height: 150px; }\n    @media (max-width: 700px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .item video { aspect-ratio: 4 / 3; } }\n    @media (max-width: 380px) { .gallery { grid-template-columns: 1fr; } }
+    .item img, .item video { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: #08090b; }
+    .item video { height: auto; min-height: 150px; }
     .name { padding: 10px 12px; color: #d8dae0; font-size: 13px; overflow-wrap: anywhere; }
     .empty { color: #a6a9b2; padding: 36px 8px; text-align: center; }
-    @media (max-width: 520px) { .topbar { padding: 0 8px; } .tab { min-width: 0; flex: 1; } .content { padding: 14px; } .gallery { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 10px; } }
+    @media (max-width: 700px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .item video { aspect-ratio: 4 / 3; } }
+    @media (max-width: 380px) { .gallery { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .topbar { padding: 0 8px; } .tab { min-width: 0; flex: 1; } .content { padding: 14px; } }
   </style>
 </head>
 <body>
@@ -36,7 +39,8 @@
   <main id="app">
     <nav class="topbar">
       <button class="tab active" data-tab="images" type="button">Images</button>
-      <button class="tab" data-tab="videos" type="button">Videos</button>\n      <button class="tab" data-tab="oc" type="button">OC</button>
+      <button class="tab" data-tab="videos" type="button">Videos</button>
+      <button class="tab" data-tab="oc" type="button">OC</button>
     </nav>
     <section class="content">
       <p class="status" id="status">Loading files…</p>
@@ -53,10 +57,13 @@
     const gallery = document.getElementById('gallery');
     const status = document.getElementById('status');
     let galleryData = null;
-    let activeTab = 'images';\n    const blurControl = document.getElementById('blurControl');\n    const blurImages = document.getElementById('blurImages');\n    let imagesBlurred = localStorage.getItem('privateGalleryBlurImages') === 'true';\n    blurImages.checked = imagesBlurred;
+    let activeTab = 'images';
+    let requestId = 0;
+    let retryTimer = null;
 
     function enterSite() {
-      if (passwordInput.value.toLowerCase() === 'diaper') {
+      if (passwordInput.value.trim().toLowerCase() === 'diaper') {
+        error.textContent = '';
         login.style.display = 'none';
         app.style.display = 'block';
         loadFiles();
@@ -65,9 +72,6 @@
         passwordInput.select();
       }
     }
-
-    let requestId = 0;
-    let retryTimer = null;
 
     function loadFiles() {
       if (retryTimer) {
@@ -112,38 +116,59 @@
       script.onerror = retryConnection;
       script.src = APP_URL + '?action=list&callback=' + callbackName + '&_=' + Date.now();
       document.body.appendChild(script);
-
       retryTimer = setTimeout(retryConnection, 5000);
     }
 
     function renderTab() {
       if (!galleryData) return;
-      const files = activeTab === 'images' ? (galleryData.images || []).filter(file => (file.mimeType || '').startsWith('image/')) : activeTab === 'oc' ? (galleryData.ocImages || []).filter(file => (file.mimeType || '').startsWith('image/')) : (galleryData.videos || []).filter(file => (file.mimeType || '').startsWith('video/'));\n      blurControl.hidden = activeTab !== 'images';
+      let files = [];
+      if (activeTab === 'images') {
+        files = (galleryData.images || []).filter(file => (file.mimeType || '').startsWith('image/'));
+      } else if (activeTab === 'oc') {
+        files = (galleryData.ocImages || []).filter(file => (file.mimeType || '').startsWith('image/'));
+      } else {
+        files = (galleryData.videos || []).filter(file => (file.mimeType || '').startsWith('video/'));
+      }
+
       gallery.replaceChildren();
       status.textContent = files.length + (activeTab === 'videos' ? ' videos found' : activeTab === 'oc' ? ' OC images found' : ' images found');
+
       if (!files.length) {
-        gallery.innerHTML = '<div class="empty">No ' + activeTab + ' found in the folder, or the Apps Script is not returning that file type.</div>';
+        gallery.innerHTML = '<div class="empty">No ' + activeTab + ' found in the folder.</div>';
         return;
       }
 
       files.forEach(file => {
         const card = document.createElement('article');
         card.className = 'item';
-        if (activeTab === 'images') {
+
+        if (activeTab === 'videos') {
+          const video = document.createElement('video');
+          video.controls = true;
+          video.preload = 'metadata';
+          video.playsInline = true;
+          video.src = file.id ? 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(file.id) : file.url;
+          video.onerror = () => {
+            const message = document.createElement('div');
+            message.className = 'name';
+            message.textContent = 'Cannot play this video. Check its Google Drive sharing access and format.';
+            video.replaceWith(message);
+          };
+          card.appendChild(video);
+        } else {
           const image = document.createElement('img');
           image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1600' : file.url;
           image.alt = file.name || 'Image';
           image.loading = 'lazy';
-          image.onerror = () => { image.removeAttribute('src'); image.alt = 'Cannot load image. Check its Google Drive sharing access.'; image.style.color = '#ff9b9b'; image.style.padding = '24px'; };
+          image.onerror = () => {
+            image.removeAttribute('src');
+            image.alt = 'Cannot load image. Check its Google Drive sharing access.';
+            image.style.color = '#ff9b9b';
+            image.style.padding = '24px';
+          };
           card.appendChild(image);
-        } else {
-          const video = document.createElement('video');
-          video.controls = true;
-          video.preload = 'metadata';
-          video.src = file.id ? 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(file.id) : file.url;
-          video.onerror = () => { video.replaceWith(Object.assign(document.createElement('div'), { className: 'name', textContent: 'Cannot play this video. Check Google Drive sharing access and file format.' })); };
-          card.appendChild(video);
         }
+
         const name = document.createElement('div');
         name.className = 'name';
         name.textContent = file.name || 'Untitled';
@@ -152,10 +177,11 @@
       });
     }
 
-    blurImages.addEventListener('change', () => {\n      imagesBlurred = blurImages.checked;\n      localStorage.setItem('privateGalleryBlurImages', String(imagesBlurred));\n      renderTab();\n    });\n\n    document.getElementById('enter').addEventListener('click', enterSite);
+    document.getElementById('enter').addEventListener('click', enterSite);
     passwordInput.addEventListener('keydown', event => {
       if (event.key === 'Enter') enterSite();
     });
+
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
