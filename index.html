@@ -66,27 +66,54 @@
       }
     }
 
+    let requestId = 0;
+    let retryTimer = null;
+
     function loadFiles() {
-      status.textContent = 'Loading files…';
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+
+      status.textContent = 'Connecting…';
       const script = document.createElement('script');
-      const callbackName = '__privateGalleryCallback';
-      window[callbackName] = data => {
+      const callbackName = '__privateGalleryCallback_' + (++requestId);
+      let finished = false;
+
+      function retryConnection() {
+        if (finished) return;
+        finished = true;
         delete window[callbackName];
         script.remove();
+        status.textContent = 'Failed, retrying now…';
+        retryTimer = setTimeout(loadFiles, 1000);
+      }
+
+      window[callbackName] = data => {
+        if (finished) return;
+        finished = true;
+        delete window[callbackName];
+        script.remove();
+
         if (!data || !data.ok) {
-          status.textContent = data && data.error ? data.error : 'Could not load files.';
+          status.textContent = 'Failed, retrying now…';
+          retryTimer = setTimeout(loadFiles, 1000);
           return;
+        }
+
+        if (retryTimer) {
+          clearTimeout(retryTimer);
+          retryTimer = null;
         }
         galleryData = data;
         renderTab();
       };
-      script.onerror = () => {
-        delete window[callbackName];
-        script.remove();
-        status.textContent = 'Could not connect to the gallery. Check that the Apps Script is deployed with access for anyone.';
-      };
+
+      script.onerror = retryConnection;
       script.src = APP_URL + '?action=list&callback=' + callbackName + '&_=' + Date.now();
       document.body.appendChild(script);
+
+      retryTimer = setTimeout(retryConnection, 5000);
     }
 
     function renderTab() {
