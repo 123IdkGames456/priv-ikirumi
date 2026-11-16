@@ -29,6 +29,12 @@
     .item img.blurred { filter:blur(28px); transform:scale(1.12); }
     .name { padding: 10px 12px; color: #d8dae0; font-size: 13px; overflow-wrap: anywhere; }
     .empty { color: #a6a9b2; padding: 36px 8px; text-align: center; }
+    .files-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-bottom:14px; }
+    .file-card { display:inline-flex; flex-direction:column; align-items:flex-start; gap:8px; margin:6px; padding:12px; border:1px solid #34363d; border-radius:9px; background:#191b20; max-width:100%; overflow-wrap:anywhere; }
+    .file-card button { padding:8px 10px; margin-right:5px; font-size:13px; }
+    #filesPath { color:#c5c8d0; overflow-wrap:anywhere; }
+    #filesStatus { color:#a6a9b2; font-size:13px; }
+    #uploadFiles { max-width:150px; font-size:12px; }
     @media (max-width: 700px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .item video { aspect-ratio: 4 / 3; } }
     @media (max-width: 380px) { .gallery { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .topbar { padding: 0 8px; } .tab { min-width: 0; flex: 1; } .content { padding: 14px; } }
@@ -195,8 +201,37 @@
       });
     }
 
-    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.textContent = '📁 ' + folder.name; b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('div'); box.className = 'file-card'; const name = document.createElement('p'); name.textContent = file.name; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Delete ' + file.name + '?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; box.append(name,open,del); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
+    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.textContent = '📁 ' + folder.name; b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('div'); box.className = 'file-card'; const name = document.createElement('p'); name.textContent = file.name; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); const rename = document.createElement('button'); rename.textContent = 'Rename'; rename.onclick = () => { const next = prompt('New file name:',file.name); if (next && next.trim() && next.trim() !== file.name) filesAction({action:'rename',folder:filesFolderId,fileId:file.id,name:next.trim()}); }; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; box.append(name,open,rename,del); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
     function filesAction(params) { const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = result => { delete window[cb]; s.remove(); if (result && result.ok) loadGlobalFiles(filesFolderId); else document.getElementById('filesStatus').textContent = (result && result.error) || 'Action failed.'; }; s.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb})); document.body.append(s); }
+    document.getElementById('filesUp').onclick = () => {
+      if (!filesFolderData || filesFolderId === GLOBAL_FILES_ROOT) return;
+      const path = filesFolderData.path || [];
+      loadGlobalFiles(path.length > 1 ? path[path.length - 2].id : GLOBAL_FILES_ROOT);
+    };
+    document.getElementById('newFolder').onclick = () => {
+      const name = prompt('New folder name:');
+      if (name && name.trim()) filesAction({action:'createFolder',folder:filesFolderId,name:name.trim()});
+    };
+    document.getElementById('uploadFiles').onchange = async event => {
+      const selected = Array.from(event.target.files || []);
+      for (let i = 0; i < selected.length; i++) {
+        const file = selected[i];
+        if (file.size > 15 * 1024 * 1024) { alert(file.name + ' is over the 15 MB limit.'); continue; }
+        document.getElementById('filesStatus').textContent = 'Uploading ' + file.name + '…';
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const body = new URLSearchParams({file:base64,filename:file.name,mimeType:file.type || 'application/octet-stream',folder:filesFolderId});
+        try { await fetch(GLOBAL_FILES_API,{method:'POST',mode:'no-cors',body}); }
+        catch (e) { document.getElementById('filesStatus').textContent = 'Upload failed for ' + file.name; event.target.value=''; return; }
+      }
+      event.target.value='';
+      document.getElementById('filesStatus').textContent='Upload sent. Refreshing…';
+      setTimeout(() => loadGlobalFiles(filesFolderId),3000);
+    };
     login.addEventListener('submit', enterSite);
     blurImages.addEventListener('change', () => {
       imagesBlurred = blurImages.checked;
