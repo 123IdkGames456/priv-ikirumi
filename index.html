@@ -166,18 +166,21 @@
         card.className = 'item';
 
         if (activeTab === 'videos') {
-          const video = document.createElement('video');
-          video.controls = true;
-          video.preload = 'metadata';
-          video.playsInline = true;
-          video.src = file.id ? 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(file.id) : file.url;
-          video.onerror = () => {
-            const message = document.createElement('div');
-            message.className = 'name';
-            message.textContent = 'Cannot play this video. Check its Google Drive sharing access and format.';
-            video.replaceWith(message);
-          };
-          card.appendChild(video);
+          const player = document.createElement('iframe');
+          player.src = file.id
+            ? 'https://drive.google.com/file/d/' + encodeURIComponent(file.id) + '/preview'
+            : (file.previewUrl || file.url || '');
+          player.title = file.name || 'Video player';
+          player.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+          player.allowFullscreen = true;
+          player.loading = 'lazy';
+          player.referrerPolicy = 'no-referrer';
+          player.style.display = 'block';
+          player.style.width = '100%';
+          player.style.aspectRatio = '16 / 9';
+          player.style.border = '0';
+          player.style.background = '#08090b';
+          card.appendChild(player);
         } else {
           const image = document.createElement('img');
           image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1600' : file.url;
