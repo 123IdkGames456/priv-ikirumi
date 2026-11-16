@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #101114;
+      color: #f2f2f2;
+      font-family: Arial, sans-serif;
+    }
+    .login {
+      width: min(340px, calc(100% - 40px));
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    input, button {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #34363d;
+      border-radius: 8px;
+      background: #1b1d22;
+      color: #fff;
+      font: inherit;
+    }
+    button { cursor: pointer; background: #30333b; }
+    button:hover { background: #3b3f49; }
+    #error { min-height: 18px; margin: 0; color: #ff6b6b; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main class="login" id="login">
+    <input id="password" type="password" placeholder="Password" autocomplete="off" autofocus>
+    <button id="enter" type="button">Enter</button>
+    <p id="error" aria-live="polite"></p>
+  </main>
+  <script>
+    const passwordInput = document.getElementById('password');
+    const error = document.getElementById('error');
+
+    function enterSite() {
+      if (passwordInput.value.toLowerCase() === 'diaper') {
+        document.body.replaceChildren();
+        document.body.style.display = 'block';
+      } else {
+        error.textContent = 'Wrong password';
+        passwordInput.select();
+      }
+    }
+
+    document.getElementById('enter').addEventListener('click', enterSite);
+    passwordInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') enterSite();
+    });
+  </script>
+</body>
+</html>
