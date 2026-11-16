@@ -193,6 +193,9 @@
         files = (galleryData.videos || []).filter(file => (file.mimeType || '').startsWith('video/'));
       }
 
+      const getAddedTime = file => Date.parse(file.createdTime || file.createdDate || file.dateCreated || file.created || file.modifiedTime || '') || 0;
+      files = files.map((file, index) => ({file, index})).sort((a, b) => getAddedTime(b.file) - getAddedTime(a.file) || a.index - b.index).map(entry => entry.file);
+      viewerFiles = files;
       gallery.replaceChildren();
       gallery.classList.toggle('videos', activeTab === 'videos');
       blurControl.hidden = activeTab !== 'images';
@@ -225,9 +228,11 @@
           card.appendChild(player);
         } else {
           const image = document.createElement('img');
-          image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1600' : file.url;
+          image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w4000' : file.url;
           image.alt = file.name || 'Image';
           image.loading = 'lazy';
+          image.style.cursor = 'zoom-in';
+          image.addEventListener('click', () => openViewer(files.indexOf(file)));
           if (activeTab === 'images' && imagesBlurred) image.classList.add('blurred');
           image.onerror = () => {
             image.removeAttribute('src');
