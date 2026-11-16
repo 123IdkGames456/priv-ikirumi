@@ -91,11 +91,11 @@
 
     function renderTab() {
       if (!galleryData) return;
-      const files = activeTab === 'images' ? (galleryData.images || []) : (galleryData.videos || []);
+      const files = activeTab === 'images' ? (galleryData.images || []).filter(file => (file.mimeType || '').startsWith('image/')) : (galleryData.videos || []).filter(file => (file.mimeType || '').startsWith('video/'));
       gallery.replaceChildren();
-      status.textContent = files.length + (activeTab === 'images' ? ' images' : ' videos');
+      status.textContent = files.length + (activeTab === 'images' ? ' images found' : ' videos found');
       if (!files.length) {
-        gallery.innerHTML = '<div class="empty">No ' + activeTab + ' found.</div>';
+        gallery.innerHTML = '<div class="empty">No ' + activeTab + ' found in the folder, or the Apps Script is not returning that file type.</div>';
         return;
       }
 
@@ -104,16 +104,17 @@
         card.className = 'item';
         if (activeTab === 'images') {
           const image = document.createElement('img');
-          image.src = file.url;
+          image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1600' : file.url;
           image.alt = file.name || 'Image';
           image.loading = 'lazy';
-          image.onerror = () => { image.alt = 'Image could not be loaded'; };
+          image.onerror = () => { image.removeAttribute('src'); image.alt = 'Cannot load image. Check its Google Drive sharing access.'; image.style.color = '#ff9b9b'; image.style.padding = '24px'; };
           card.appendChild(image);
         } else {
           const video = document.createElement('video');
           video.controls = true;
           video.preload = 'metadata';
-          video.src = file.url;
+          video.src = file.id ? 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(file.id) : file.url;
+          video.onerror = () => { video.replaceWith(Object.assign(document.createElement('div'), { className: 'name', textContent: 'Cannot play this video. Check Google Drive sharing access and file format.' })); };
           card.appendChild(video);
         }
         const name = document.createElement('div');
