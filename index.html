@@ -43,17 +43,20 @@
 
   <main id="app">
     <nav class="topbar">
+      <button class="tab" data-tab="files" type="button">Files</button>
       <button class="tab active" data-tab="images" type="button">Images</button>
       <button class="tab" data-tab="videos" type="button">Videos</button>
       <button class="tab" data-tab="oc" type="button">OC</button>
     </nav>
     <section class="content">
       <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="blurControl" hidden><input id="blurImages" type="checkbox"> Blur images</label></div>
-      <div class="gallery" id="gallery"></div>
+      <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
     </section>
   </main>
 
   <script>
+    const GLOBAL_FILES_API = 'https://script.google.com/macros/s/AKfycbzxfEwUk0dqv7xnfJ-VAzOd0i6dZ7SduY5CuTFOIcMuoNgaIQgTU6zeRRJIkNQkV7vj/exec';
+    const GLOBAL_FILES_ROOT = '1RZ_rKVUzsrdvlo59lzK0PuWpYv23Iy9K';
     const APP_URL = 'https://script.google.com/macros/s/AKfycby2Ph4fE_YQAQOWDaaI9bR5kOsVuuSBbARJ2_IMLk-Dc0bjO5RYapbjE-tp5DDZVZbb/exec';
     const passwordInput = document.getElementById('password');
     const error = document.getElementById('error');
@@ -63,6 +66,9 @@
     const status = document.getElementById('status');
     let galleryData = null;
     let activeTab = 'images';
+    let filesFolderId = GLOBAL_FILES_ROOT;
+    let filesFolderData = null;
+    let filesRequestId = 0;
     const blurControl = document.getElementById('blurControl');
     const blurImages = document.getElementById('blurImages');
     let imagesBlurred = localStorage.getItem('privateGalleryBlurImages') === 'true';
@@ -189,6 +195,8 @@
       });
     }
 
+    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.textContent = '📁 ' + folder.name; b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('div'); box.className = 'file-card'; const name = document.createElement('p'); name.textContent = file.name; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Delete ' + file.name + '?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; box.append(name,open,del); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
+    function filesAction(params) { const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = result => { delete window[cb]; s.remove(); if (result && result.ok) loadGlobalFiles(filesFolderId); else document.getElementById('filesStatus').textContent = (result && result.error) || 'Action failed.'; }; s.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb})); document.body.append(s); }
     login.addEventListener('submit', enterSite);
     blurImages.addEventListener('change', () => {
       imagesBlurred = blurImages.checked;
@@ -204,7 +212,9 @@
         document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
         tab.classList.add('active');
         activeTab = tab.dataset.tab;
-        renderTab();
+        const fm = document.getElementById('filesManager');
+        if (activeTab === 'files') { fm.style.display = 'block'; gallery.style.display = 'none'; document.querySelector('.toolbar').style.display = 'none'; loadGlobalFiles(filesFolderId); }
+        else { fm.style.display = 'none'; gallery.style.display = 'grid'; document.querySelector('.toolbar').style.display = 'flex'; renderTab(); }
       });
     });
   </script>
