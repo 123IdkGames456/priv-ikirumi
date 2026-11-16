@@ -1,6 +1,0 @@
-const DRIVE_API="https://script.google.com/macros/s/AKfycbzd3Dec-3K8DEvESDUQKMLoja4dEvQ0n4YlEOmiaBmKyCweUDgBvSZo7F60WT5Vso3IZQ/exec";
-const DRIVE_ROOT="1RZ_rKVUzsrdvlo59lzK0PuWpYv23Iy9K";
-function jsonp(params){return new Promise((resolve,reject)=>{const cb="drivecb_"+Math.random().toString(36).slice(2);const s=document.createElement("script");const timer=setTimeout(()=>{cleanup();reject(Error("Drive request timed out"));},20000);function cleanup(){clearTimeout(timer);delete window[cb];s.remove()}window[cb]=data=>{cleanup();resolve(data)};params.callback=cb; s.src=DRIVE_API+"?"+new URLSearchParams(params);s.onerror=()=>{cleanup();reject(Error("Could not connect to Drive"))};document.body.appendChild(s)})}
-async function listDrive(folderId=DRIVE_ROOT){const d=await jsonp({action:"list",folderId});return d.files||d.items||d.data||[]}
-function fileUrl(f){return f.webContentLink||f.downloadUrl||("https://drive.google.com/uc?export=view&id="+encodeURIComponent(f.id))}
-function safeText(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
