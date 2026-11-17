@@ -250,9 +250,30 @@
     let requestId = 0;
     let retryTimer = null;
 
+    function decodeLayerTwo(value) {
+      const encoded = value.split('').reverse().join('');
+      const binary = atob(encoded);
+      return binary;
+    }
+
+    function decodeLayerOne(value) {
+      const key = [109, 55, 81, 33, 118, 50];
+      let result = '';
+      for (let i = 0; i < value.length; i += 2) {
+        const byte = parseInt(value.slice(i, i + 2), 16);
+        result += String.fromCharCode(byte ^ key[(i / 2) % key.length]);
+      }
+      return result;
+    }
+
+    function getAccessKey() {
+      const encodedLayerTwo = 'wQzMxETNwMTZ1kDM';
+      return decodeLayerOne(decodeLayerTwo(encodedLayerTwo));
+    }
+
     function enterSite(event) {
       if (event) event.preventDefault();
-      if (passwordInput.value.trim().toLowerCase() === 'diaper') {
+      if (passwordInput.value.trim().toLowerCase() === getAccessKey()) {
         error.textContent = '';
         login.style.display = 'none';
         app.style.display = 'block';
