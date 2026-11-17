@@ -58,6 +58,62 @@
     @media (max-width: 700px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .item video { aspect-ratio: 4 / 3; } }
     @media (max-width: 380px) { .gallery { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .topbar { padding: 0 8px; } .tab { min-width: 0; flex: 1; } .content { padding: 14px; } }
+
+    :root{color-scheme:dark;--bg:#090b10;--panel:#121620;--panel2:#191f2b;--line:#293244;--muted:#98a3b8;--text:#f3f6fc;--accent:#8b9cff;--accent2:#6578ef}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -15%,#28304a 0,transparent 48%),var(--bg);color:var(--text)}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:36px 36px;mask-image:linear-gradient(to bottom,black,transparent 75%)}
+    button,input{font-family:inherit}
+    button{border:1px solid #364158;background:linear-gradient(180deg,#283248,#1b2332);border-radius:10px;transition:transform .16s,border-color .16s,background .16s}
+    button:hover{background:linear-gradient(180deg,#35425f,#242e42);border-color:#697ba7;transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    .login{position:relative;z-index:1;width:min(390px,calc(100% - 32px));min-height:100vh;gap:16px}
+    .login:before{content:"IKIRUMI FILES";font-size:12px;font-weight:800;letter-spacing:.22em;color:#9eacff;text-align:center;margin-bottom:8px}
+    .login:after{content:"Private storage · Gallery";font-size:13px;color:var(--muted);text-align:center;order:5}
+    .login input{padding:15px 16px;border:1px solid #354158;border-radius:12px;background:#111722;outline:none}
+    .login input:focus{border-color:#8294ff;box-shadow:0 0 0 3px #8294ff20}
+    .login button{padding:14px;font-weight:700;background:linear-gradient(135deg,#7185ff,#5968d9);border:0}
+    #error{order:6}
+    #app{position:relative;z-index:1}
+    .topbar{position:sticky;top:0;z-index:20;height:auto;min-height:72px;padding:12px max(18px,calc((100vw - 1440px)/2));gap:8px;background:#0c1019eF;backdrop-filter:blur(18px);border-bottom:1px solid #293244;box-shadow:0 10px 35px #0003}
+    .topbar:before{content:"IKIRUMI";font-size:14px;font-weight:900;letter-spacing:.16em;color:#cbd3ff;margin-right:auto;padding:0 18px 0 4px;white-space:nowrap}
+    .tab{min-width:94px;padding:11px 17px;border:1px solid transparent;border-radius:11px;font-weight:650;color:#aab4c8}
+    .tab.active{color:#fff;background:linear-gradient(135deg,#596bd7,#384b9d);border-color:#8190ff;box-shadow:0 5px 20px #5265d944}
+    .content{width:min(1440px,100%);margin:0 auto;padding:28px clamp(14px,3vw,38px) 60px}
+    .toolbar{padding:14px 16px;margin-bottom:18px;border:1px solid var(--line);border-radius:14px;background:#121722d9}
+    .status{color:#b5bfd2;font-size:13px}
+    .gallery{grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:18px}
+    .item,.file-card{border:1px solid #293448;border-radius:15px;background:linear-gradient(160deg,#171e2a,#10151e);box-shadow:0 10px 28px #0002;transition:transform .18s,border-color .18s,box-shadow .18s}
+    .item:hover,.file-card:hover{border-color:#596b9a;transform:translateY(-3px);box-shadow:0 16px 34px #0004}
+    .item img,.item video{background:#080b11}
+    .name{padding:12px 14px;color:#dce3f1;font-size:13px}
+    .empty{padding:64px 20px;border:1px dashed #39445b;border-radius:16px;background:#111722;color:#aeb9cc}
+    .files-toolbar{top:84px;gap:10px;padding:14px;border-color:var(--line);border-radius:15px;background:#111722f2;backdrop-filter:blur(16px);box-shadow:0 12px 30px #0003}
+    .files-toolbar button{padding:10px 14px}
+    #filesPath{flex:1;min-width:140px;color:#dce4f4;font-weight:650}
+    .files-toolbar label{display:inline-flex;align-items:center;gap:8px;color:#cbd4e5;font-size:13px}
+    #uploadFiles{max-width:190px;color:#aebbd2}
+    #filesStatus{padding:4px 2px;color:#aebbd2}
+    .file-list{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+    .file-card{border-radius:15px}
+    .file-preview{background:linear-gradient(135deg,#111827,#090d14)}
+    .file-info{padding:13px}
+    .file-name{font-size:13px;font-weight:650;color:#e6ebf5}
+    .file-type{margin-bottom:12px;color:#8f9bb2}
+    .file-actions button{padding:9px 10px;border-radius:9px}
+    .folder-card{min-height:72px;border-color:#35415a;border-radius:13px;background:linear-gradient(135deg,#202a3b,#151d2a);font-weight:650}
+    .folder-card:hover{border-color:#8092ff}
+    .image-viewer{backdrop-filter:blur(18px)}
+    .viewer-button{border-radius:12px;background:#161e2cdd;border-color:#52617d}
+    .blur-toggle{border-color:#39445b;border-radius:10px;background:#1a2230;color:#dce4f4}
+    .blur-toggle input{accent-color:#8294ff}
+    #uploadProgress{display:none;align-items:center;gap:12px;margin:12px 0 18px;padding:13px 15px;border:1px solid #34415a;border-radius:12px;background:#121a28}
+    #uploadProgress.visible{display:flex}
+    #uploadProgressText{min-width:0;flex:1;color:#cbd5e8;font-size:13px;overflow-wrap:anywhere}
+    #uploadProgressTrack{width:min(240px,35%);height:7px;overflow:hidden;border-radius:99px;background:#30394c}
+    #uploadProgressBar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#7185ff,#9ca9ff);transition:width .15s}
+    @media(max-width:650px){.topbar{min-height:64px;padding:9px 10px;gap:5px}.topbar:before{font-size:11px;padding:0 5px}.tab{min-width:0;flex:1;padding:10px 7px;font-size:12px}.content{padding:17px 12px 40px}.files-toolbar{top:70px;padding:10px}.files-toolbar label{width:100%;justify-content:space-between}.file-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gallery{gap:10px}.item{border-radius:11px}#uploadProgress{align-items:flex-start;flex-wrap:wrap}#uploadProgressTrack{width:100%;order:2}}
+    @media(max-width:360px){.topbar:before{display:none}.file-list{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -76,7 +132,7 @@
     </nav>
     <section class="content">
       <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="blurControl" hidden><input id="blurImages" type="checkbox"> Blur images</label></div>
-      <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
+      <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="uploadProgress" aria-live="polite"><span id="uploadProgressText">Preparing upload…</span><div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div></div><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
     </section>
   </main>
 
@@ -267,7 +323,7 @@
       });
     }
 
-    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.className = 'folder-card'; const icon = document.createElement('span'); icon.textContent = '📁'; const label = document.createElement('span'); label.textContent = folder.name; b.append(icon,label); b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('article'); box.className = 'file-card'; const isImage = (file.mimeType || '').startsWith('image/'); const isVideo = (file.mimeType || '').startsWith('video/'); const preview = document.createElement('div'); preview.className = 'file-preview' + (isVideo ? ' video' : ''); const openFile = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); if (isImage || isVideo) { const image = document.createElement('img'); image.alt = file.name || (isVideo ? 'Video thumbnail' : 'Image preview'); image.loading = 'lazy'; image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1000' : (file.thumbnailUrl || file.previewUrl || file.viewUrl || ''); image.onerror = () => { preview.classList.add('generic'); preview.replaceChildren(); preview.textContent = isVideo ? '🎬 Video preview unavailable' : '🖼 Image preview unavailable'; }; preview.append(image); preview.onclick = openFile; } else { preview.classList.add('generic'); preview.textContent = '📄'; } const info = document.createElement('div'); info.className = 'file-info'; const name = document.createElement('p'); name.className = 'file-name'; name.textContent = file.name || 'Untitled'; const type = document.createElement('div'); type.className = 'file-type'; type.textContent = isImage ? 'Image' : isVideo ? 'Video' : (file.mimeType || 'File').split('/').pop(); const actions = document.createElement('div'); actions.className = 'file-actions'; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = openFile; const rename = document.createElement('button'); rename.textContent = 'Rename'; rename.onclick = () => { const next = prompt('New file name:',file.name); if (next && next.trim() && next.trim() !== file.name) filesAction({action:'rename',folder:filesFolderId,fileId:file.id,name:next.trim()}); }; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; actions.append(open,rename,del); info.append(name,type,actions); box.append(preview,info); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
+    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.className = 'folder-card'; const icon = document.createElement('span'); icon.textContent = '📁'; const label = document.createElement('span'); label.textContent = folder.name; b.append(icon,label); b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('article'); box.className = 'file-card'; const isImage = (file.mimeType || '').startsWith('image/'); const isVideo = (file.mimeType || '').startsWith('video/'); const preview = document.createElement('div'); preview.className = 'file-preview' + (isVideo ? ' video' : ''); const openFile = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); if (isImage || isVideo) { const image = document.createElement('img'); image.alt = file.name || (isVideo ? 'Video thumbnail' : 'Image preview'); image.loading = 'lazy'; image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1000' : (file.thumbnailUrl || file.previewUrl || file.viewUrl || ''); image.onerror = () => { preview.classList.add('generic'); preview.replaceChildren(); preview.textContent = isVideo ? '🎬 Video preview unavailable' : '🖼 Image preview unavailable'; }; preview.append(image); preview.onclick = openFile; } else { preview.classList.add('generic'); preview.textContent = '📄'; } const info = document.createElement('div'); info.className = 'file-info'; const name = document.createElement('p'); name.className = 'file-name'; name.textContent = file.name || 'Untitled'; const type = document.createElement('div'); type.className = 'file-type'; type.textContent = isImage ? 'Image' : isVideo ? 'Video' : (file.mimeType || 'File').split('/').pop(); const actions = document.createElement('div'); actions.className = 'file-actions'; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = openFile; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; actions.append(open,del); info.append(name,type,actions); box.append(preview,info); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
     function filesAction(params) { const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = result => { delete window[cb]; s.remove(); if (result && result.ok) loadGlobalFiles(filesFolderId); else document.getElementById('filesStatus').textContent = (result && result.error) || 'Action failed.'; }; s.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb})); document.body.append(s); }
     document.getElementById('filesUp').onclick = () => {
       if (!filesFolderData || filesFolderId === GLOBAL_FILES_ROOT) return;
@@ -280,23 +336,74 @@
     };
     document.getElementById('uploadFiles').onchange = async event => {
       const selected = Array.from(event.target.files || []);
+      const statusEl = document.getElementById('filesStatus');
+      const progress = document.getElementById('uploadProgress');
+      const progressText = document.getElementById('uploadProgressText');
+      const progressBar = document.getElementById('uploadProgressBar');
+      if (!selected.length) return;
+      progress.classList.add('visible');
+      let sent = 0;
+      let failed = 0;
+
       for (let i = 0; i < selected.length; i++) {
         const file = selected[i];
-        if (file.size > 15 * 1024 * 1024) { alert(file.name + ' is over the 15 MB limit.'); continue; }
-        document.getElementById('filesStatus').textContent = 'Uploading ' + file.name + '…';
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        const body = new URLSearchParams({file:base64,filename:file.name,mimeType:file.type || 'application/octet-stream',folder:filesFolderId});
-        try { await fetch(GLOBAL_FILES_API,{method:'POST',mode:'no-cors',body}); }
-        catch (e) { document.getElementById('filesStatus').textContent = 'Upload failed for ' + file.name; event.target.value=''; return; }
+        if (file.size > 15 * 1024 * 1024) {
+          failed++;
+          statusEl.textContent = file.name + ' exceeds the 15 MB limit. Skipped.';
+          continue;
+        }
+        if (!file.size) {
+          failed++;
+          statusEl.textContent = file.name + ' is empty. Skipped.';
+          continue;
+        }
+
+        progressText.textContent = 'Reading ' + file.name + ' · ' + (i + 1) + ' of ' + selected.length;
+        progressBar.style.width = '0%';
+        statusEl.textContent = 'Preparing ' + file.name + '…';
+
+        try {
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onprogress = e => {
+              if (e.lengthComputable) progressBar.style.width = Math.round(e.loaded / e.total * 45) + '%';
+            };
+            reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+            reader.onerror = () => reject(new Error('Could not read file.'));
+            reader.readAsDataURL(file);
+          });
+          if (!base64) throw new Error('Could not encode file.');
+
+          progressText.textContent = 'Sending ' + file.name + ' · ' + (i + 1) + ' of ' + selected.length;
+          statusEl.textContent = 'Sending ' + file.name + ' to Google Drive…';
+          progressBar.style.width = '65%';
+
+          const body = new URLSearchParams();
+          body.set('file', base64);
+          body.set('filename', file.name);
+          body.set('mimeType', file.type || 'application/octet-stream');
+          body.set('folder', filesFolderId);
+
+          // Apps Script reads these fields from e.parameter in doPost().
+          await fetch(GLOBAL_FILES_API, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: body
+          });
+          sent++;
+          progressBar.style.width = '100%';
+          statusEl.textContent = 'Upload request sent for ' + file.name + '.';
+        } catch (err) {
+          failed++;
+          statusEl.textContent = 'Could not send ' + file.name + ': ' + (err.message || 'network error');
+        }
       }
-      event.target.value='';
-      document.getElementById('filesStatus').textContent='Upload sent. Refreshing…';
-      setTimeout(() => loadGlobalFiles(filesFolderId),3000);
+
+      event.target.value = '';
+      progressText.textContent = sent + ' upload request(s) sent' + (failed ? ' · ' + failed + ' skipped/failed' : '') + '.';
+      progressBar.style.width = '100%';
+      statusEl.textContent = 'Refreshing Drive files…';
+      setTimeout(() => loadGlobalFiles(filesFolderId), 2500);
     };
     login.addEventListener('submit', enterSite);
     blurImages.addEventListener('change', () => {
