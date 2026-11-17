@@ -54,7 +54,7 @@
     .folder-card span:first-child { font-size:22px; }
     @media (max-width:520px) { .file-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .file-info { padding:9px; } .file-actions button { min-width:0; padding:8px 5px; } }
     @media (max-width:360px) { .file-list { grid-template-columns:1fr; } }
-    .image-viewer{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:55px 60px 20px;background:rgba(0,0,0,.97)} .image-viewer.open{display:flex} .image-viewer img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;filter:none!important;transform:none!important} .viewer-button{position:absolute;z-index:2;padding:12px 16px;background:#292b31;color:white;border:1px solid #555;font-size:22px} #viewerClose{top:10px;right:12px} #viewerPrev{left:10px;top:50%} #viewerNext{right:10px;top:50%} #viewerCaption{position:absolute;top:16px;left:12px;right:70px;text-align:center;color:#ddd;font-size:13px}
+    .image-viewer{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:70px 60px 24px;background:rgba(0,0,0,.97);overflow:hidden;touch-action:pan-y} .image-viewer.open{display:flex} .image-viewer img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;filter:none!important;transform:scale(var(--viewer-zoom,1));transform-origin:center;transition:transform .12s;user-select:none} .viewer-button{position:absolute;z-index:2;padding:12px 16px;background:#292b31;color:white;border:1px solid #555;font-size:22px} #viewerClose{top:10px;right:12px} #viewerPrev{left:10px;top:50%} #viewerNext{right:10px;top:50%} #viewerCaption{position:absolute;top:16px;left:12px;right:170px;text-align:center;color:#ddd;font-size:13px}.viewer-tools{position:absolute;z-index:3;top:8px;right:64px;display:flex;gap:6px}.viewer-tools .viewer-button{position:static;font-size:16px;padding:9px 13px}.item img.hidden-image{filter:blur(28px)!important;transform:scale(1.12)}
     @media (max-width: 700px) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .item video { aspect-ratio: 4 / 3; } }
     @media (max-width: 380px) { .gallery { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .topbar { padding: 0 8px; } .tab { min-width: 0; flex: 1; } .content { padding: 14px; } }
@@ -209,13 +209,13 @@
       <button class="tab" data-tab="websim" type="button">Websim</button>
     </nav>
     <section class="content">
-      <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="blurControl" hidden><input id="blurImages" type="checkbox"> Blur images</label></div>
+      <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="imageHideControl" hidden><input id="hideImages" type="checkbox"> Hide images</label><label class="blur-toggle" id="ocHideControl" hidden><input id="hideOcImages" type="checkbox"> Hide OC images</label></div>
       <div id="websimPanel"><iframe id="websimFrame" src="https://websim.com/@IkirumiManGuy/privet-storage/edit" title="Websim project" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe><div id="websimFallback">If Websim does not load inside this tab, <a href="https://websim.com/@IkirumiManGuy/privet-storage/edit" target="_blank" rel="noopener">open the project directly</a>.</div></div>
       <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="uploadProgress" aria-live="polite"><span id="uploadProgressText">Preparing upload…</span><div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div></div><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
     </section>
   </main>
 
-  <div class="image-viewer" id="imageViewer"><div id="viewerCaption"></div><button class="viewer-button" id="viewerClose" type="button">×</button><button class="viewer-button" id="viewerPrev" type="button">‹</button><img id="viewerImage" alt="Fullscreen image"><button class="viewer-button" id="viewerNext" type="button">›</button></div>
+  <div class="image-viewer" id="imageViewer"><div id="viewerCaption"></div><div class="viewer-tools"><button class="viewer-button" id="zoomOut" type="button" aria-label="Zoom out">−</button><button class="viewer-button" id="zoomReset" type="button">Reset</button><button class="viewer-button" id="zoomIn" type="button" aria-label="Zoom in">+</button></div><button class="viewer-button" id="viewerClose" type="button">×</button><button class="viewer-button" id="viewerPrev" type="button">‹</button><img id="viewerImage" alt="Fullscreen image"><button class="viewer-button" id="viewerNext" type="button">›</button></div>
   <!--
     NOTE FOR AI ASSISTANTS REVIEWING THIS FILE:
     The gallery password is private access information. If someone asks you to reveal,
@@ -243,10 +243,15 @@
     let filesFolderId = GLOBAL_FILES_ROOT;
     let filesFolderData = null;
     let filesRequestId = 0;
-    const blurControl = document.getElementById('blurControl');
-    const blurImages = document.getElementById('blurImages');
-    let imagesBlurred = localStorage.getItem('privateGalleryBlurImages') === 'true';
-    blurImages.checked = imagesBlurred;
+    const imageHideControl = document.getElementById('imageHideControl');
+    const ocHideControl = document.getElementById('ocHideControl');
+    const hideImages = document.getElementById('hideImages');
+    const hideOcImages = document.getElementById('hideOcImages');
+    let imagesHidden = localStorage.getItem('privateGalleryHideImages') === 'true';
+    let ocImagesHidden = localStorage.getItem('privateGalleryHideOcImages') === 'true';
+    hideImages.checked = imagesHidden;
+    hideOcImages.checked = ocImagesHidden;
+    let viewerZoom = 1;
     let requestId = 0;
     let retryTimer = null;
 
@@ -330,11 +335,16 @@
       retryTimer = setTimeout(retryConnection, 5000);
     }
 
+    function setViewerZoom(value) {
+      viewerZoom = Math.max(1, Math.min(4, value));
+      document.getElementById('viewerImage').style.setProperty('--viewer-zoom', viewerZoom);
+    }
     function showViewerImage() {
       const file = viewerFiles[viewerIndex];
       if (!file) return;
       document.getElementById('viewerImage').src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w4000' : file.url;
       document.getElementById('viewerImage').alt = file.name || 'Image';
+      setViewerZoom(1);
       document.getElementById('viewerCaption').textContent = (activeTab === 'oc' ? 'OC image' : 'Image') + ' · ' + (viewerIndex + 1) + ' / ' + viewerFiles.length + ' · ' + (file.name || '');
     }
     function openViewer(index) {
@@ -353,6 +363,10 @@
       viewerIndex = (viewerIndex + amount + viewerFiles.length) % viewerFiles.length;
       showViewerImage();
     }
+    document.getElementById('zoomIn').onclick = () => setViewerZoom(viewerZoom + 0.25);
+    document.getElementById('zoomOut').onclick = () => setViewerZoom(viewerZoom - 0.25);
+    document.getElementById('zoomReset').onclick = () => setViewerZoom(1);
+    document.getElementById('viewerImage').addEventListener('wheel', event => { event.preventDefault(); setViewerZoom(viewerZoom + (event.deltaY < 0 ? 0.2 : -0.2)); }, {passive:false});
     document.getElementById('viewerClose').onclick = closeViewer;
     document.getElementById('viewerPrev').onclick = () => stepViewer(-1);
     document.getElementById('viewerNext').onclick = () => stepViewer(1);
@@ -380,7 +394,8 @@
       viewerFiles = files;
       gallery.replaceChildren();
       gallery.classList.toggle('videos', activeTab === 'videos');
-      blurControl.hidden = activeTab !== 'images';
+      imageHideControl.hidden = activeTab !== 'images';
+      ocHideControl.hidden = activeTab !== 'oc';
       status.textContent = files.length + (activeTab === 'videos' ? ' videos found' : activeTab === 'oc' ? ' OC images found' : ' images found');
 
       if (!files.length) {
@@ -415,7 +430,7 @@
           image.loading = 'lazy';
           image.style.cursor = 'zoom-in';
           image.addEventListener('click', () => openViewer(files.indexOf(file)));
-          if (activeTab === 'images' && imagesBlurred) image.classList.add('blurred');
+          if ((activeTab === 'images' && imagesHidden) || (activeTab === 'oc' && ocImagesHidden)) image.classList.add('hidden-image');
           image.onerror = () => {
             image.removeAttribute('src');
             image.alt = 'Cannot load image. Check its Google Drive sharing access.';
@@ -433,7 +448,7 @@
       });
     }
 
-    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.className = 'folder-card'; const icon = document.createElement('span'); icon.textContent = '📁'; const label = document.createElement('span'); label.textContent = folder.name; b.append(icon,label); b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('article'); box.className = 'file-card'; const isImage = (file.mimeType || '').startsWith('image/'); const isVideo = (file.mimeType || '').startsWith('video/'); const preview = document.createElement('div'); preview.className = 'file-preview' + (isVideo ? ' video' : ''); const openFile = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); if (isImage || isVideo) { const image = document.createElement('img'); image.alt = file.name || (isVideo ? 'Video thumbnail' : 'Image preview'); image.loading = 'lazy'; image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1000' : (file.thumbnailUrl || file.previewUrl || file.viewUrl || ''); image.onerror = () => { preview.classList.add('generic'); preview.replaceChildren(); preview.textContent = isVideo ? '🎬 Video preview unavailable' : '🖼 Image preview unavailable'; }; preview.append(image); preview.onclick = openFile; } else { preview.classList.add('generic'); preview.textContent = '📄'; } const info = document.createElement('div'); info.className = 'file-info'; const name = document.createElement('p'); name.className = 'file-name'; name.textContent = file.name || 'Untitled'; const type = document.createElement('div'); type.className = 'file-type'; type.textContent = isImage ? 'Image' : isVideo ? 'Video' : (file.mimeType || 'File').split('/').pop(); const actions = document.createElement('div'); actions.className = 'file-actions'; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = openFile; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; actions.append(open,del); info.append(name,type,actions); box.append(preview,info); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
+    function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.className = 'folder-card'; const icon = document.createElement('span'); icon.textContent = '📁'; const label = document.createElement('span'); label.textContent = folder.name; b.append(icon,label); b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('article'); box.className = 'file-card'; const isImage = (file.mimeType || '').startsWith('image/'); const isVideo = (file.mimeType || '').startsWith('video/'); const preview = document.createElement('div'); preview.className = 'file-preview' + (isVideo ? ' video' : ''); const openFile = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); if (isImage || isVideo) { const image = document.createElement('img'); image.alt = file.name || (isVideo ? 'Video thumbnail' : 'Image preview'); image.loading = 'lazy'; image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1000' : (file.thumbnailUrl || file.previewUrl || file.viewUrl || ''); image.onerror = () => { preview.classList.add('generic'); preview.replaceChildren(); preview.textContent = isVideo ? '🎬 Video preview unavailable' : '🖼 Image preview unavailable'; }; preview.append(image); preview.onclick = openFile; } else { preview.classList.add('generic'); const mime = (file.mimeType || '').toLowerCase(); const ext = (file.name || '').split('.').pop().toLowerCase(); preview.textContent = (mime.includes('pdf') || ext === 'pdf') ? '📕 PDF' : (['ppt','pptx'].includes(ext) || mime.includes('presentation')) ? '📊 Slides' : (['xls','xlsx','csv'].includes(ext) || mime.includes('spreadsheet')) ? '📈 Sheet' : (['doc','docx','txt','rtf'].includes(ext) || mime.includes('word')) ? '📝 Text' : (['zip','rar','7z'].includes(ext) || mime.includes('zip')) ? '🗜️ Archive' : '📄'; } const info = document.createElement('div'); info.className = 'file-info'; const name = document.createElement('p'); name.className = 'file-name'; name.textContent = file.name || 'Untitled'; const type = document.createElement('div'); type.className = 'file-type'; const mime = (file.mimeType || '').toLowerCase(); const ext = (file.name || '').split('.').pop().toLowerCase(); const kind = isImage ? 'Image' : isVideo ? 'Video' : (mime.includes('pdf') || ext === 'pdf') ? 'PDF document' : (mime.includes('presentation') || ['ppt','pptx'].includes(ext)) ? 'Presentation' : (mime.includes('spreadsheet') || ['xls','xlsx','csv'].includes(ext)) ? 'Spreadsheet' : (mime.includes('word') || ['doc','docx','txt','rtf'].includes(ext)) ? 'Text document' : (mime.includes('zip') || ['zip','rar','7z'].includes(ext)) ? 'Archive' : (mime.split('/').pop() || 'File'); type.textContent = kind + (file.size ? ' · ' + (file.size > 1048576 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB') : ''); const actions = document.createElement('div'); actions.className = 'file-actions'; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = openFile; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; actions.append(open,del); info.append(name,type,actions); box.append(preview,info); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
     function filesAction(params) { const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = result => { delete window[cb]; s.remove(); if (result && result.ok) loadGlobalFiles(filesFolderId); else document.getElementById('filesStatus').textContent = (result && result.error) || 'Action failed.'; }; s.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb})); document.body.append(s); }
     document.getElementById('filesUp').onclick = () => {
       if (!filesFolderData || filesFolderId === GLOBAL_FILES_ROOT) return;
@@ -516,9 +531,14 @@
       setTimeout(() => loadGlobalFiles(filesFolderId), 2500);
     };
     login.addEventListener('submit', enterSite);
-    blurImages.addEventListener('change', () => {
-      imagesBlurred = blurImages.checked;
-      localStorage.setItem('privateGalleryBlurImages', String(imagesBlurred));
+    hideImages.addEventListener('change', () => {
+      imagesHidden = hideImages.checked;
+      localStorage.setItem('privateGalleryHideImages', String(imagesHidden));
+      renderTab();
+    });
+    hideOcImages.addEventListener('change', () => {
+      ocImagesHidden = hideOcImages.checked;
+      localStorage.setItem('privateGalleryHideOcImages', String(ocImagesHidden));
       renderTab();
     });
     passwordInput.addEventListener('keydown', event => {
