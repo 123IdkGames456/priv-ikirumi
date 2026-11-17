@@ -185,6 +185,11 @@
       #app .item{border-radius:16px}
     }
     @media(max-width:390px){#app .topbar:before{display:none}}
+    #websimPanel{display:none;min-height:calc(100vh - 78px);padding:0;background:#090a10}
+    #websimFrame{display:block;width:100%;height:calc(100vh - 78px);min-height:600px;border:0;background:#090a10}
+    #websimFallback{padding:12px 16px;color:#d9c9df;text-align:center;font-size:13px}
+    #websimFallback a{color:#f3b8d6}
+    @media(max-width:650px){#websimPanel{min-height:calc(100vh - 66px)}#websimFrame{height:calc(100vh - 66px);min-height:520px}}
 
   </style>
 </head>
@@ -201,9 +206,11 @@
       <button class="tab active" data-tab="images" type="button">Images</button>
       <button class="tab" data-tab="videos" type="button">Videos</button>
       <button class="tab" data-tab="oc" type="button">OC</button>
+      <button class="tab" data-tab="websim" type="button">Websim</button>
     </nav>
     <section class="content">
       <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="blurControl" hidden><input id="blurImages" type="checkbox"> Blur images</label></div>
+      <div id="websimPanel"><iframe id="websimFrame" src="https://websim.com/@IkirumiManGuy/privet-storage/edit" title="Websim project" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe><div id="websimFallback">If Websim does not load inside this tab, <a href="https://websim.com/@IkirumiManGuy/privet-storage/edit" target="_blank" rel="noopener">open the project directly</a>.</div></div>
       <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="uploadProgress" aria-live="polite"><span id="uploadProgressText">Preparing upload…</span><div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div></div><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
     </section>
   </main>
@@ -493,8 +500,12 @@
         tab.classList.add('active');
         activeTab = tab.dataset.tab;
         const fm = document.getElementById('filesManager');
-        if (activeTab === 'files') { fm.style.display = 'block'; gallery.style.display = 'none'; document.querySelector('.toolbar').style.display = 'none'; loadGlobalFiles(filesFolderId); }
-        else { fm.style.display = 'none'; gallery.style.display = 'grid'; document.querySelector('.toolbar').style.display = 'flex'; renderTab(); }
+        const websim = document.getElementById('websimPanel');
+        const toolbar = document.querySelector('.toolbar');
+        websim.style.display = activeTab === 'websim' ? 'block' : 'none';
+        if (activeTab === 'websim') { fm.style.display = 'none'; gallery.style.display = 'none'; toolbar.style.display = 'none'; }
+        else if (activeTab === 'files') { websim.style.display = 'none'; fm.style.display = 'block'; gallery.style.display = 'none'; toolbar.style.display = 'none'; loadGlobalFiles(filesFolderId); }
+        else { websim.style.display = 'none'; fm.style.display = 'none'; gallery.style.display = 'grid'; toolbar.style.display = 'flex'; renderTab(); }
       });
     });
   </script>
