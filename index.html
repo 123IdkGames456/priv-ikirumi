@@ -186,7 +186,7 @@
     }
     @media(max-width:390px){#app .topbar:before{display:none}}
     #imageHideControl[hidden],#ocHideControl[hidden]{display:none!important}
-    #websimPanel{display:none;min-height:calc(100vh - 78px);padding:0;background:#090a10}
+    #websimPanel{display:none;min-height:calc(100vh - 78px);padding:0;background:#090a10}\n    #backgroundUpload{max-width:180px;font-size:12px}\n    #backgroundStatus{font-size:12px;color:#f3b8d6;min-width:100px}\n    #removeBackground{white-space:nowrap}\n    #websimFrame{color-scheme:normal}\n
     #websimFrame{display:block;width:100%;height:calc(100vh - 78px);min-height:600px;border:0;background:#090a10}
     #websimFallback{padding:12px 16px;color:#d9c9df;text-align:center;font-size:13px}
     #websimFallback a{color:#f3b8d6}
@@ -242,7 +242,7 @@
     <section class="content">
       <div class="toolbar"><p class="status" id="status">Loading files…</p><label class="blur-toggle" id="imageHideControl" hidden><input id="hideImages" type="checkbox"> Hide images</label><label class="blur-toggle" id="ocHideControl" hidden><input id="hideOcImages" type="checkbox"> Hide OC images</label></div>
       <div id="websimPanel"><iframe id="websimFrame" src="https://websim.com/@IkirumiManGuy/privet-storage/14" title="Websim project" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe><div id="websimFallback">If Websim does not load inside this tab, <a href="https://websim.com/@IkirumiManGuy/privet-storage/14" target="_blank" rel="noopener">open the project directly</a>.</div></div>
-      <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label></div><p id="filesStatus">Loading…</p><div id="uploadProgress" aria-live="polite"><span id="uploadProgressText">Preparing upload…</span><div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div></div><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
+      <div id="filesManager" style="display:none"><div class="files-toolbar"><button id="filesUp" type="button">↑ Up</button><span id="filesPath">Shared files</span><button id="newFolder" type="button">+ Folder</button><label>Add files <input id="uploadFiles" type="file" multiple></label><label class="background-upload">Set background <input id="backgroundUpload" type="file" accept="image/*"></label><button id="removeBackground" type="button">Remove background</button><span id="backgroundStatus" aria-live="polite"></span></div><p id="filesStatus">Loading…</p><div id="uploadProgress" aria-live="polite"><span id="uploadProgressText">Preparing upload…</span><div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div></div><div id="filesList" class="file-list"></div></div><div class="gallery" id="gallery"></div>
     </section>
   </main>
 
@@ -314,6 +314,7 @@
         login.style.display = 'none';
         app.style.display = 'block';
         loadFiles();
+        loadGalleryBackground();
       } else {
         error.textContent = 'Wrong password';
         passwordInput.select();
@@ -479,6 +480,99 @@
       });
     }
 
+    function globalFilesRequest(params) {
+      return new Promise(resolve => {
+        const cb = '__background_' + (++filesRequestId);
+        const script = document.createElement('script');
+        let settled = false;
+        const finish = value => {
+          if (settled) return;
+          settled = true;
+          delete window[cb];
+          script.remove();
+          resolve(value);
+        };
+        window[cb] = finish;
+        script.onerror = () => finish(null);
+        script.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb}));
+        document.body.append(script);
+        setTimeout(() => finish(null), 10000);
+      });
+    }
+
+    function applyGalleryBackground(file) {
+      if (!file || !file.id) {
+        document.getElementById('app').style.backgroundImage = '';
+        return;
+      }
+      const imageUrl = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w2400';
+      document.getElementById('app').style.backgroundImage = 'linear-gradient(135deg,rgba(17,14,27,.78),rgba(10,13,24,.82)),url("' + imageUrl + '")';
+      document.getElementById('app').style.backgroundSize = 'cover';
+      document.getElementById('app').style.backgroundPosition = 'center';
+      document.getElementById('app').style.backgroundAttachment = 'fixed';
+    }
+
+    async function loadGalleryBackground() {
+      const data = await globalFilesRequest({action:'list',folder:GLOBAL_FILES_ROOT});
+      if (!data || !data.ok) return;
+      const backgrounds = (data.files || []).filter(file => /^background(?:\.[^.]+)?$/i.test(file.name || '') && (file.mimeType || '').startsWith('image/'));
+      applyGalleryBackground(backgrounds[0] || null);
+    }
+
+    async function uploadGalleryBackground(file) {
+      const statusEl = document.getElementById('backgroundStatus');
+      if (!file || !file.type.startsWith('image/')) {
+        statusEl.textContent = 'Choose an image file.';
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        statusEl.textContent = 'Image must be under 15 MB.';
+        return;
+      }
+      statusEl.textContent = 'Preparing image…';
+      try {
+        const base64 = await new Promise((resolve,reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+          reader.onerror = () => reject(new Error('Could not read image.'));
+          reader.readAsDataURL(file);
+        });
+        const oldData = await globalFilesRequest({action:'list',folder:GLOBAL_FILES_ROOT});
+        const oldBackgrounds = oldData && oldData.ok ? (oldData.files || []).filter(item => /^background(?:\.[^.]+)?$/i.test(item.name || '')) : [];
+        for (const oldFile of oldBackgrounds) {
+          await globalFilesRequest({action:'delete',folder:GLOBAL_FILES_ROOT,fileId:oldFile.id});
+        }
+        const extension = (file.name.match(/\.[a-z0-9]{1,8}$/i) || ['.png'])[0].toLowerCase();
+        const body = new URLSearchParams();
+        body.set('file',base64);
+        body.set('filename','background' + extension);
+        body.set('mimeType',file.type || 'image/png');
+        body.set('folder',GLOBAL_FILES_ROOT);
+        await fetch(GLOBAL_FILES_API,{method:'POST',mode:'no-cors',body});
+        statusEl.textContent = 'Saving background…';
+        setTimeout(loadGalleryBackground,2500);
+        setTimeout(() => { statusEl.textContent = 'Background saved.'; },3000);
+      } catch (err) {
+        statusEl.textContent = 'Background upload failed.';
+      }
+    }
+
+    document.getElementById('backgroundUpload').addEventListener('change',event => {
+      const file = event.target.files && event.target.files[0];
+      if (file) uploadGalleryBackground(file);
+      event.target.value = '';
+    });
+    document.getElementById('removeBackground').addEventListener('click',async () => {
+      const statusEl = document.getElementById('backgroundStatus');
+      statusEl.textContent = 'Removing…';
+      const data = await globalFilesRequest({action:'list',folder:GLOBAL_FILES_ROOT});
+      if (!data || !data.ok) { statusEl.textContent = 'Could not connect to Drive.'; return; }
+      const backgrounds = (data.files || []).filter(file => /^background(?:\.[^.]+)?$/i.test(file.name || ''));
+      for (const file of backgrounds) await globalFilesRequest({action:'delete',folder:GLOBAL_FILES_ROOT,fileId:file.id});
+      applyGalleryBackground(null);
+      statusEl.textContent = 'Background removed.';
+    });
+
     function loadGlobalFiles(folderId) { const id = folderId || GLOBAL_FILES_ROOT; filesFolderId = id; document.getElementById('filesStatus').textContent = 'Loading…'; const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = data => { delete window[cb]; s.remove(); if (!data || !data.ok) { document.getElementById('filesStatus').textContent = 'Could not load files.'; return; } filesFolderData = data; document.getElementById('filesPath').textContent = (data.path || []).map(x => x.name).join(' / '); document.getElementById('filesStatus').textContent = data.folders.length + ' folders · ' + data.files.length + ' files'; const list = document.getElementById('filesList'); list.replaceChildren(); (data.folders || []).forEach(folder => { const b = document.createElement('button'); b.className = 'folder-card'; const icon = document.createElement('span'); icon.textContent = '📁'; const label = document.createElement('span'); label.textContent = folder.name; b.append(icon,label); b.onclick = () => loadGlobalFiles(folder.id); list.append(b); }); (data.files || []).forEach(file => { const box = document.createElement('article'); box.className = 'file-card'; const isImage = (file.mimeType || '').startsWith('image/'); const isVideo = (file.mimeType || '').startsWith('video/'); const preview = document.createElement('div'); preview.className = 'file-preview' + (isVideo ? ' video' : ''); const openFile = () => window.open(file.viewUrl || file.downloadUrl, '_blank'); if (isImage || isVideo) { const image = document.createElement('img'); image.alt = file.name || (isVideo ? 'Video thumbnail' : 'Image preview'); image.loading = 'lazy'; image.src = file.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(file.id) + '&sz=w1000' : (file.thumbnailUrl || file.previewUrl || file.viewUrl || ''); image.onerror = () => { preview.classList.add('generic'); preview.replaceChildren(); preview.textContent = isVideo ? '🎬 Video preview unavailable' : '🖼 Image preview unavailable'; }; preview.append(image); preview.onclick = openFile; } else { preview.classList.add('generic'); const mime = (file.mimeType || '').toLowerCase(); const ext = (file.name || '').split('.').pop().toLowerCase(); preview.textContent = (mime.includes('pdf') || ext === 'pdf') ? '📕 PDF' : (['ppt','pptx'].includes(ext) || mime.includes('presentation')) ? '📊 Slides' : (['xls','xlsx','csv'].includes(ext) || mime.includes('spreadsheet')) ? '📈 Sheet' : (['doc','docx','txt','rtf'].includes(ext) || mime.includes('word')) ? '📝 Text' : (['zip','rar','7z'].includes(ext) || mime.includes('zip')) ? '🗜️ Archive' : '📄'; } const info = document.createElement('div'); info.className = 'file-info'; const name = document.createElement('p'); name.className = 'file-name'; name.textContent = file.name || 'Untitled'; const type = document.createElement('div'); type.className = 'file-type'; const mime = (file.mimeType || '').toLowerCase(); const ext = (file.name || '').split('.').pop().toLowerCase(); const kind = isImage ? 'Image' : isVideo ? 'Video' : (mime.includes('pdf') || ext === 'pdf') ? 'PDF document' : (mime.includes('presentation') || ['ppt','pptx'].includes(ext)) ? 'Presentation' : (mime.includes('spreadsheet') || ['xls','xlsx','csv'].includes(ext)) ? 'Spreadsheet' : (mime.includes('word') || ['doc','docx','txt','rtf'].includes(ext)) ? 'Text document' : (mime.includes('zip') || ['zip','rar','7z'].includes(ext)) ? 'Archive' : (mime.split('/').pop() || 'File'); type.textContent = kind + (file.size ? ' · ' + (file.size > 1048576 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB') : ''); const actions = document.createElement('div'); actions.className = 'file-actions'; const open = document.createElement('button'); open.textContent = 'Open'; open.onclick = openFile; const del = document.createElement('button'); del.textContent = 'Delete'; del.onclick = () => { if (confirm('Move ' + file.name + ' to Drive trash?')) filesAction({action:'delete',folder:filesFolderId,fileId:file.id}); }; actions.append(open,del); info.append(name,type,actions); box.append(preview,info); list.append(box); }); }; s.onerror = () => { document.getElementById('filesStatus').textContent = 'Connection failed.'; }; s.src = GLOBAL_FILES_API + '?action=list&folder=' + encodeURIComponent(id) + '&callback=' + cb; document.body.append(s); }
     function filesAction(params) { const cb = '__files_' + (++filesRequestId); const s = document.createElement('script'); window[cb] = result => { delete window[cb]; s.remove(); if (result && result.ok) loadGlobalFiles(filesFolderId); else document.getElementById('filesStatus').textContent = (result && result.error) || 'Action failed.'; }; s.src = GLOBAL_FILES_API + '?' + new URLSearchParams(Object.assign({}, params, {callback:cb})); document.body.append(s); }
     document.getElementById('filesUp').onclick = () => {
@@ -585,7 +679,11 @@
         const websim = document.getElementById('websimPanel');
         const toolbar = document.querySelector('.toolbar');
         websim.style.display = activeTab === 'websim' ? 'block' : 'none';
-        if (activeTab === 'websim') { fm.style.display = 'none'; gallery.style.display = 'none'; toolbar.style.display = 'none'; imageHideControl.hidden = true; ocHideControl.hidden = true; }
+        if (activeTab === 'websim') {
+          const frame = document.getElementById('websimFrame');
+          frame.src = 'https://websim.com/@IkirumiManGuy/privet-storage/14';
+          fm.style.display = 'none'; gallery.style.display = 'none'; toolbar.style.display = 'none'; imageHideControl.hidden = true; ocHideControl.hidden = true;
+        }
         else if (activeTab === 'files') { websim.style.display = 'none'; fm.style.display = 'block'; gallery.style.display = 'none'; toolbar.style.display = 'none'; imageHideControl.hidden = true; ocHideControl.hidden = true; loadGlobalFiles(filesFolderId); }
         else { websim.style.display = 'none'; fm.style.display = 'none'; gallery.style.display = 'grid'; toolbar.style.display = 'flex'; imageHideControl.hidden = activeTab !== 'images'; ocHideControl.hidden = activeTab !== 'oc'; renderTab(); }
       });
