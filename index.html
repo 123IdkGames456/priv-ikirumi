@@ -223,6 +223,11 @@
     @media(max-width:700px){#app .topbar{display:flex;gap:6px;padding:10px 8px}#app .topbar:before{width:100%;min-height:28px;margin:0;padding:0 4px;font-size:12px}#app .tab{flex:1;min-width:0;padding:10px 5px;font-size:11px;border-radius:13px}#app .content{padding:22px 11px 42px}#app .content:after{margin-bottom:17px}#app .toolbar{padding:11px;border-radius:15px}#app .gallery{gap:10px}}
     @media(max-width:390px){#app .tab{font-size:10px;padding:9px 3px}}
 
+
+    .gallery.videos .item video{width:100%;height:auto;max-height:75vh;aspect-ratio:16/9;object-fit:contain;background:#05060a;border-radius:0;}
+    .video-error{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:220px;padding:24px;text-align:center;color:#e8d9ec;background:#0b0c12;}
+    .video-error a{color:#f4b8d7;font-weight:700;}
+    @media(max-width:650px){.gallery.videos .item video{max-height:70vh;aspect-ratio:16/9;}}
 </style>
 </head>
 <body>
@@ -441,20 +446,36 @@
         card.className = 'item';
 
         if (activeTab === 'videos') {
-          const player = document.createElement('iframe');
-          player.src = file.id
-            ? 'https://drive.google.com/file/d/' + encodeURIComponent(file.id) + '/preview'
-            : (file.previewUrl || file.url || '');
-          player.title = file.name || 'Video player';
-          player.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
-          player.allowFullscreen = true;
-          player.loading = 'lazy';
-          player.referrerPolicy = 'no-referrer';
+          const player = document.createElement('video');
+          const driveVideoUrl = file.id
+            ? 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(file.id)
+            : (file.downloadUrl || file.url || file.previewUrl || '');
+          player.src = driveVideoUrl;
+          player.controls = true;
+          player.playsInline = true;
+          player.preload = 'metadata';
+          player.setAttribute('controlsList', 'nodownload');
+          player.setAttribute('aria-label', file.name || 'Video player');
           player.style.display = 'block';
           player.style.width = '100%';
           player.style.aspectRatio = '16 / 9';
+          player.style.height = 'auto';
+          player.style.maxHeight = '75vh';
+          player.style.objectFit = 'contain';
           player.style.border = '0';
           player.style.background = '#08090b';
+          player.onerror = () => {
+            const message = document.createElement('div');
+            message.className = 'video-error';
+            message.textContent = 'Video could not play directly. Check Drive sharing, or use Open in Drive.';
+            const open = document.createElement('a');
+            open.href = file.viewUrl || ('https://drive.google.com/file/d/' + encodeURIComponent(file.id || '') + '/view');
+            open.target = '_blank';
+            open.rel = 'noopener';
+            open.textContent = 'Open in Drive';
+            message.appendChild(open);
+            player.replaceWith(message);
+          };
           card.appendChild(player);
         } else {
           const image = document.createElement('img');
